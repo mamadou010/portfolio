@@ -1,156 +1,115 @@
 <?php
 /* ============================================================
    PORTFOLIO MAMADOU NDIAYE — contact.php
-   Page de contact avec deux formulaires traités en PHP :
-     1. Formulaire de contact simple
-     2. Formulaire de demande de projet
-
-   Fonctionnement :
-   - Les deux formulaires postent vers cette même page (contact.php)
-   - Un champ caché 'form_type' distingue les deux formulaires
-   - PHP valide chaque champ et affiche les erreurs en ligne
-   - En cas de succès, un message de confirmation est affiché
-   - Les valeurs saisies sont conservées si un champ est invalide
+   Page de contact avec deux formulaires :
+     1. Formulaire de message général  → table messages_contact
+     2. Formulaire de demande de projet → table demandes_projet
+   Protection CSRF + validation serveur + journalisation visite.
    ============================================================ */
 
-require 'fonctions.php';
+session_start();
+require_once 'fonctions.php';
+require_once 'config/connexion.php';
+
+/* ---- Journalisation de la visite -------------------------- */
+enregistrer_visite($pdo, 'contact.php');
 
 /* ============================================================
-   TRAITEMENT — FORMULAIRE 1 : CONTACT SIMPLE
+   TRAITEMENT FORMULAIRE DE CONTACT (Onglet 1)
    ============================================================ */
-$erreurs_contact  = [];    /* Tableau associatif des erreurs par nom de champ */
-$succes_contact   = false; /* Passe à true si tous les champs sont valides */
+$erreurs_contact  = [];
+$succes_contact   = false;
+$valeurs_contact  = ['nom' => '', 'email' => '', 'message' => ''];
 
-/* Valeurs conservées pour pré-remplir le formulaire après une erreur */
-$contact_nom      = '';
-$contact_email    = '';
-$contact_sujet    = '';
-$contact_message  = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_contact'])) {
 
-/* Traiter uniquement si le formulaire a été soumis en POST */
-if ($_SERVER['REQUEST_METHOD'] === 'POST'
-    && isset($_POST['form_type'])
-    && $_POST['form_type'] === 'contact')
-{
-    /* Récupérer et nettoyer chaque champ */
-    $contact_nom     = valeur_post('nom');
-    $contact_email   = valeur_post('email');
-    $contact_sujet   = valeur_post('sujet');
-    $contact_message = valeur_post('message');
+    verifier_csrf('contact');
 
-    /* --- Validation champ par champ --- */
+    $valeurs_contact['nom']     = valeur_post('nom');
+    $valeurs_contact['email']   = valeur_post('email');
+    $valeurs_contact['message'] = valeur_post('message');
 
-    /* Nom : ne doit pas être vide */
-    if (!champ_requis($contact_nom)) {
-        $erreurs_contact['nom'] = 'Le nom est obligatoire.';
-    }
+    if (!champ_requis($valeurs_contact['nom']))
+        { $erreurs_contact['nom']     = 'Le nom est obligatoire.'; }
+    if (!champ_requis($valeurs_contact['email']))
+        { $erreurs_contact['email']   = "L'adresse e-mail est obligatoire."; }
+    elseif (!email_valide($valeurs_contact['email']))
+        { $erreurs_contact['email']   = "L'adresse e-mail n'est pas valide."; }
+    if (!champ_requis($valeurs_contact['message']))
+        { $erreurs_contact['message'] = 'Le message est obligatoire.'; }
 
-    /* Email : obligatoire et format valide */
-    if (!champ_requis($contact_email)) {
-        $erreurs_contact['email'] = 'L\'adresse e-mail est obligatoire.';
-    } elseif (!email_valide($contact_email)) {
-        $erreurs_contact['email'] = 'L\'adresse e-mail n\'est pas valide.';
-    }
-
-    /* Sujet : ne doit pas être vide */
-    if (!champ_requis($contact_sujet)) {
-        $erreurs_contact['sujet'] = 'Le sujet est obligatoire.';
-    }
-
-    /* Message : obligatoire et au moins 10 caractères */
-    if (!champ_requis($contact_message)) {
-        $erreurs_contact['message'] = 'Le message ne peut pas être vide.';
-    } elseif (strlen(trim($contact_message)) < 10) {
-        $erreurs_contact['message'] = 'Le message est trop court (minimum 10 caractères).';
-    }
-
-    /* Si aucune erreur : succès — ici on pourrait appeler mail() ou insérer en BDD */
     if (empty($erreurs_contact)) {
-        $succes_contact = true;
+        try {
+            $req = $pdo->prepare(
+                'INSERT INTO messages_contact (nom, email, message)
+                 VALUES (:nom, :email, :message)'
+            );
+            $req->execute([
+                ':nom'     => trim($_POST['nom']),
+                ':email'   => trim($_POST['email']),
+                ':message' => trim($_POST['message']),
+            ]);
+            $succes_contact  = true;
+            $valeurs_contact = ['nom' => '', 'email' => '', 'message' => ''];
+        } catch (PDOException $e) {
+            error_log('[PORTFOLIO] Erreur insertion message : ' . $e->getMessage());
+            $erreurs_contact['global'] = 'Une erreur est survenue. Veuillez réessayer.';
+        }
     }
 }
 
 /* ============================================================
-   TRAITEMENT — FORMULAIRE 2 : DEMANDE DE PROJET
+   TRAITEMENT FORMULAIRE DEMANDE DE PROJET (Onglet 2)
    ============================================================ */
-$erreurs_projet  = [];
-$succes_projet   = false;
+$erreurs_demande  = [];
+$succes_demande   = false;
+$valeurs_demande  = ['nom' => '', 'email' => '', 'type_projet' => '', 'description' => '', 'budget' => ''];
 
-/* Valeurs conservées en cas d'erreur */
-$proj_nom        = '';
-$proj_email      = '';
-$proj_type       = '';
-$proj_budget     = '';
-$proj_desc       = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_demande'])) {
 
-/* Tableau de correspondance pour afficher les types lisibles */
-$types_lisibles = [
-    'site-vitrine' => 'Site vitrine',
-    'ecommerce'    => 'Site e-commerce',
-    'application'  => 'Application web',
-    'blog'         => 'Blog / Contenu',
-    'autre'        => 'Autre',
-];
+    verifier_csrf('demande');
 
-/* Récapitulatif affiché après soumission réussie */
-$recap_projet = [];
+    $valeurs_demande['nom']         = valeur_post('nom');
+    $valeurs_demande['email']       = valeur_post('email');
+    $valeurs_demande['type_projet'] = valeur_post('type_projet');
+    $valeurs_demande['description'] = valeur_post('description');
+    $valeurs_demande['budget']      = valeur_post('budget');
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST'
-    && isset($_POST['form_type'])
-    && $_POST['form_type'] === 'projet')
-{
-    /* Récupérer et nettoyer chaque champ */
-    $proj_nom    = valeur_post('proj-nom');
-    $proj_email  = valeur_post('proj-email');
-    $proj_type   = valeur_post('proj-type');
-    $proj_budget = valeur_post('proj-budget');
-    $proj_desc   = valeur_post('proj-desc');
+    if (!champ_requis($valeurs_demande['nom']))
+        { $erreurs_demande['nom']         = 'Le nom est obligatoire.'; }
+    if (!champ_requis($valeurs_demande['email']))
+        { $erreurs_demande['email']       = "L'e-mail est obligatoire."; }
+    elseif (!email_valide($valeurs_demande['email']))
+        { $erreurs_demande['email']       = "L'e-mail n'est pas valide."; }
+    if (!champ_requis($valeurs_demande['type_projet']))
+        { $erreurs_demande['type_projet'] = 'Le type de projet est obligatoire.'; }
+    if (!champ_requis($valeurs_demande['description']))
+        { $erreurs_demande['description'] = 'La description est obligatoire.'; }
 
-    /* --- Validation champ par champ --- */
-
-    if (!champ_requis($proj_nom)) {
-        $erreurs_projet['proj-nom'] = 'Le nom ou l\'entreprise est obligatoire.';
-    }
-
-    if (!champ_requis($proj_email)) {
-        $erreurs_projet['proj-email'] = 'L\'adresse e-mail est obligatoire.';
-    } elseif (!email_valide($proj_email)) {
-        $erreurs_projet['proj-email'] = 'L\'adresse e-mail n\'est pas valide.';
-    }
-
-    /* Vérifier que le type choisi est bien dans la liste autorisée */
-    if (!champ_requis($proj_type) || !array_key_exists($proj_type, $types_lisibles)) {
-        $erreurs_projet['proj-type'] = 'Veuillez choisir un type de projet.';
-    }
-
-    if (!champ_requis($proj_desc)) {
-        $erreurs_projet['proj-desc'] = 'La description du projet est obligatoire.';
-    } elseif (strlen(trim($proj_desc)) < 20) {
-        $erreurs_projet['proj-desc'] = 'La description est trop courte (minimum 20 caractères).';
-    }
-
-    /* Si tout est valide : construire le récapitulatif */
-    if (empty($erreurs_projet)) {
-        $succes_projet = true;
-
-        $recap_projet = [
-            'nom'         => $proj_nom,
-            'email'       => $proj_email,
-            'type_lisible'=> $types_lisibles[$proj_type],
-            'budget'      => $proj_budget !== '' ? $proj_budget : 'Non précisé',
-            'description' => $proj_desc,
-        ];
+    if (empty($erreurs_demande)) {
+        try {
+            $req = $pdo->prepare(
+                'INSERT INTO demandes_projet (nom, email, type_projet, description, budget)
+                 VALUES (:nom, :email, :type_projet, :description, :budget)'
+            );
+            $req->execute([
+                ':nom'         => trim($_POST['nom']),
+                ':email'       => trim($_POST['email']),
+                ':type_projet' => trim($_POST['type_projet']),
+                ':description' => trim($_POST['description']),
+                ':budget'      => trim($_POST['budget']) ?: null,
+            ]);
+            $succes_demande  = true;
+            $valeurs_demande = ['nom' => '', 'email' => '', 'type_projet' => '', 'description' => '', 'budget' => ''];
+        } catch (PDOException $e) {
+            error_log('[PORTFOLIO] Erreur insertion demande : ' . $e->getMessage());
+            $erreurs_demande['global'] = 'Une erreur est survenue. Veuillez réessayer.';
+        }
     }
 }
 
-/*
-   Déterminer quel onglet afficher par défaut.
-   Si c'est le formulaire projet qui vient d'être soumis,
-   on reste sur l'onglet "projet", sinon on ouvre "contact".
-*/
-$onglet_actif = (isset($_POST['form_type']) && $_POST['form_type'] === 'projet')
-                ? 'projet'
-                : 'contact';
+/* Onglet actif : demande si soumission demande (erreur ou succès) */
+$onglet_actif = (!empty($erreurs_demande) || $succes_demande) ? 'demande' : 'contact';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -158,7 +117,6 @@ $onglet_actif = (isset($_POST['form_type']) && $_POST['form_type'] === 'projet')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact - Mamadou Ndiaye</title>
-
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -170,356 +128,247 @@ $onglet_actif = (isset($_POST['form_type']) && $_POST['form_type'] === 'projet')
     <!-- ========== EN-TÊTE DE PAGE ========== -->
     <section class="entete-page">
         <h1>Me <span class="couleur-accent">contacter</span></h1>
-        <p>Une question, un projet ou une collaboration ? Écrivez-moi !</p>
+        <p>Une question, un projet, une collaboration ? Écrivez-moi !</p>
     </section>
 
-    <!-- ========== CARTES D'INFORMATIONS DE CONTACT ========== -->
-    <section class="section-contact-infos">
+    <!-- ========== INFOS DE CONTACT ========== -->
+    <div class="section-contact-infos">
 
         <div class="contact-info-carte">
-            <div class="contact-icone"><i class="fas fa-envelope"></i></div>
+            <div class="contact-icone">
+                <i class="fas fa-envelope"></i>
+            </div>
             <strong>Email</strong>
             <a href="mailto:ndiayem9999@gmail.com">ndiayem9999@gmail.com</a>
         </div>
 
         <div class="contact-info-carte">
-            <div class="contact-icone"><i class="fas fa-globe"></i></div>
-            <strong>Sites web</strong>
-            <a href="https://meilleur-mixeur.com"
-               target="_blank"
-               rel="noopener noreferrer">
-                meilleur-mixeur.com
-            </a>
-            <a href="https://mon-guide-petit-electromenager.com"
-               target="_blank"
-               rel="noopener noreferrer">
-                mon-guide-petit-electromenager.com
-            </a>
+            <div class="contact-icone">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <strong>Localisation</strong>
+            <span>Dakar, Sénégal</span>
         </div>
 
         <div class="contact-info-carte">
-            <div class="contact-icone"><i class="fab fa-github"></i></div>
+            <div class="contact-icone">
+                <i class="fab fa-github"></i>
+            </div>
             <strong>GitHub</strong>
-            <a href="https://github.com/mamadou010"
-               target="_blank"
-               rel="noopener noreferrer">
+            <a href="https://github.com/mamadou010" target="_blank" rel="noopener noreferrer">
                 github.com/mamadou010
             </a>
         </div>
 
-    </section>
+    </div>
 
-    <!-- ========== SECTION FORMULAIRES ========== -->
-    <section class="section-formulaires">
+    <!-- ========== FORMULAIRES AVEC ONGLETS ========== -->
+    <div class="section-formulaires">
 
-        <!-- Onglets de sélection entre les deux formulaires -->
+        <!-- Navigation par onglets — utilise les classes CSS existantes -->
         <div class="onglets">
             <button class="onglet <?= $onglet_actif === 'contact' ? 'actif' : '' ?>"
-                    data-cible="form-contact">
-                <i class="fas fa-envelope"></i> Me contacter
+                    data-cible="panneau-contact">
+                <i class="fas fa-envelope"></i> Message
             </button>
-            <button class="onglet <?= $onglet_actif === 'projet' ? 'actif' : '' ?>"
-                    data-cible="form-projet">
-                <i class="fas fa-briefcase"></i> Demande de projet
+            <button class="onglet <?= $onglet_actif === 'demande' ? 'actif' : '' ?>"
+                    data-cible="panneau-demande">
+                <i class="fas fa-project-diagram"></i> Demande de projet
             </button>
         </div>
 
-        <!-- ========================================
-             PANNEAU 1 : FORMULAIRE CONTACT SIMPLE
-             ======================================== -->
-        <div class="panneau-form <?= $onglet_actif === 'contact' ? 'actif' : '' ?>"
-             id="form-contact">
+        <!-- ===== ONGLET 1 : Message de contact ===== -->
+        <div id="panneau-contact"
+             class="panneau-form <?= $onglet_actif === 'contact' ? 'actif' : '' ?>">
 
             <?php if ($succes_contact) : ?>
-
-                <!-- Message de succès après envoi correct -->
+                <!-- Succès : affichage stylé avec l'icône et la classe existante -->
                 <div class="message-succes">
                     <i class="fas fa-check-circle"></i>
-                    <h3>Message envoyé avec succès !</h3>
-                    <p>
-                        Merci <strong><?= nettoyer($contact_nom) ?></strong>,
-                        votre message a bien été reçu. Je vous répondrai
-                        à <strong><?= nettoyer($contact_email) ?></strong>
-                        dans les plus brefs délais.
-                    </p>
-                    <a href="contact.php" class="btn-secondaire">
-                        Envoyer un autre message
-                    </a>
+                    <h3>Message envoyé !</h3>
+                    <p>Merci pour votre message. Je vous répondrai dès que possible.</p>
                 </div>
-
             <?php else : ?>
 
-                <h3>Envoyez-moi un message</h3>
+                <?php if (!empty($erreurs_contact['global'])) : ?>
+                    <p class="erreur-champ" style="margin-bottom:1rem;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <?= nettoyer($erreurs_contact['global']) ?>
+                    </p>
+                <?php endif; ?>
 
-                <!--
-                    action="contact.php" → la page se traite elle-même
-                    method="POST"        → les données ne sont pas visibles dans l'URL
-                    novalidate           → on désactive la validation HTML5 native
-                                           pour laisser PHP gérer les erreurs
-                -->
                 <form method="POST" action="contact.php" novalidate>
+                    <!-- Champ caché pour identifier le formulaire -->
+                    <input type="hidden" name="form_contact" value="1">
+                    <!-- Jeton CSRF -->
+                    <?php champ_csrf('contact'); ?>
 
-                    <!-- Champ caché : identifie ce formulaire parmi les deux -->
-                    <input type="hidden" name="form_type" value="contact">
-
-                    <!-- Champ : Nom -->
-                    <div class="groupe-champ <?= !empty($erreurs_contact['nom']) ? 'champ-erreur' : '' ?>">
-                        <label for="nom">
+                    <!-- Nom -->
+                    <div class="groupe-champ">
+                        <label for="contact-nom">
                             Votre nom <span class="obligatoire">*</span>
                         </label>
                         <input type="text"
-                               id="nom"
+                               id="contact-nom"
                                name="nom"
+                               value="<?= $valeurs_contact['nom'] ?>"
                                placeholder="Ex : Harouna Ndiaye"
-                               value="<?= nettoyer($contact_nom) ?>"
-                               required>
+                               autocomplete="name">
                         <?php afficher_erreur($erreurs_contact, 'nom'); ?>
                     </div>
 
-                    <!-- Champ : Email -->
-                    <div class="groupe-champ <?= !empty($erreurs_contact['email']) ? 'champ-erreur' : '' ?>">
-                        <label for="email">
-                            Votre email <span class="obligatoire">*</span>
+                    <!-- Email -->
+                    <div class="groupe-champ">
+                        <label for="contact-email">
+                            Adresse e-mail <span class="obligatoire">*</span>
                         </label>
                         <input type="email"
-                               id="email"
+                               id="contact-email"
                                name="email"
-                               placeholder="exemple@mail.com"
-                               value="<?= nettoyer($contact_email) ?>"
-                               required>
+                               value="<?= $valeurs_contact['email'] ?>"
+                               placeholder="example@mail.com"
+                               autocomplete="email">
                         <?php afficher_erreur($erreurs_contact, 'email'); ?>
                     </div>
 
-                    <!-- Champ : Sujet -->
-                    <div class="groupe-champ <?= !empty($erreurs_contact['sujet']) ? 'champ-erreur' : '' ?>">
-                        <label for="sujet">
-                            Sujet <span class="obligatoire">*</span>
+                    <!-- Message -->
+                    <div class="groupe-champ">
+                        <label for="contact-message">
+                            Votre message <span class="obligatoire">*</span>
                         </label>
-                        <input type="text"
-                               id="sujet"
-                               name="sujet"
-                               placeholder="Objet de votre message"
-                               value="<?= nettoyer($contact_sujet) ?>"
-                               required>
-                        <?php afficher_erreur($erreurs_contact, 'sujet'); ?>
-                    </div>
-
-                    <!-- Champ : Message -->
-                    <div class="groupe-champ <?= !empty($erreurs_contact['message']) ? 'champ-erreur' : '' ?>">
-                        <label for="message">
-                            Message <span class="obligatoire">*</span>
-                        </label>
-                        <textarea id="message"
+                        <textarea id="contact-message"
                                   name="message"
-                                  rows="5"
-                                  placeholder="Écrivez votre message ici..."
-                                  required><?= nettoyer($contact_message) ?></textarea>
+                                  rows="6"
+                                  placeholder="Décrivez votre demande..."><?= $valeurs_contact['message'] ?></textarea>
                         <?php afficher_erreur($erreurs_contact, 'message'); ?>
                     </div>
 
-                    <button type="submit" class="btn-principal btn-plein">
+                    <button type="submit" class="btn-principal" style="width:100%;justify-content:center;display:flex;gap:.5rem;align-items:center;">
                         <i class="fas fa-paper-plane"></i> Envoyer le message
                     </button>
 
+                    <p class="note-form">* Champs obligatoires</p>
                 </form>
 
             <?php endif; ?>
-
         </div>
 
-        <!-- ========================================
-             PANNEAU 2 : FORMULAIRE DEMANDE DE PROJET
-             ======================================== -->
-        <div class="panneau-form <?= $onglet_actif === 'projet' ? 'actif' : '' ?>"
-             id="form-projet">
+        <!-- ===== ONGLET 2 : Demande de projet ===== -->
+        <div id="panneau-demande"
+             class="panneau-form <?= $onglet_actif === 'demande' ? 'actif' : '' ?>">
 
-            <?php if ($succes_projet) : ?>
-
-                <!-- Récapitulatif de la demande après soumission réussie -->
+            <?php if ($succes_demande) : ?>
                 <div class="message-succes">
-                    <i class="fas fa-check-circle"></i>
-                    <h3>Demande reçue !</h3>
-                    <p>
-                        Merci <strong><?= nettoyer($recap_projet['nom']) ?></strong>,
-                        voici le récapitulatif de votre demande :
-                    </p>
-
-                    <!-- Tableau récapitulatif des données envoyées -->
-                    <div class="recap-projet">
-
-                        <div class="recap-ligne">
-                            <span class="recap-label">
-                                <i class="fas fa-user"></i> Nom
-                            </span>
-                            <span class="recap-valeur">
-                                <?= nettoyer($recap_projet['nom']) ?>
-                            </span>
-                        </div>
-
-                        <div class="recap-ligne">
-                            <span class="recap-label">
-                                <i class="fas fa-envelope"></i> Email
-                            </span>
-                            <span class="recap-valeur">
-                                <?= nettoyer($recap_projet['email']) ?>
-                            </span>
-                        </div>
-
-                        <div class="recap-ligne">
-                            <span class="recap-label">
-                                <i class="fas fa-code"></i> Type de projet
-                            </span>
-                            <span class="recap-valeur">
-                                <?= nettoyer($recap_projet['type_lisible']) ?>
-                            </span>
-                        </div>
-
-                        <div class="recap-ligne">
-                            <span class="recap-label">
-                                <i class="fas fa-wallet"></i> Budget
-                            </span>
-                            <span class="recap-valeur">
-                                <?= nettoyer($recap_projet['budget']) ?>
-                            </span>
-                        </div>
-
-                        <div class="recap-ligne">
-                            <span class="recap-label">
-                                <i class="fas fa-file-alt"></i> Description
-                            </span>
-                            <span class="recap-valeur">
-                                <?= nettoyer($recap_projet['description']) ?>
-                            </span>
-                        </div>
-
-                    </div>
-
-                    <p style="margin-top:1rem;">
-                        Je vous contacterai à
-                        <strong><?= nettoyer($recap_projet['email']) ?></strong>
-                        dans les plus brefs délais.
-                    </p>
-
-                    <a href="contact.php" class="btn-secondaire">
-                        Nouvelle demande
-                    </a>
+                    <i class="fas fa-rocket" style="color:var(--couleur-accent);"></i>
+                    <h3>Demande envoyée !</h3>
+                    <p>Votre demande de projet a bien été reçue. Je vous contacterai rapidement.</p>
                 </div>
-
             <?php else : ?>
 
-                <h3>Décrivez votre projet</h3>
+                <?php if (!empty($erreurs_demande['global'])) : ?>
+                    <p class="erreur-champ" style="margin-bottom:1rem;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <?= nettoyer($erreurs_demande['global']) ?>
+                    </p>
+                <?php endif; ?>
 
                 <form method="POST" action="contact.php" novalidate>
+                    <input type="hidden" name="form_demande" value="1">
+                    <?php champ_csrf('demande'); ?>
 
-                    <!-- Champ caché : identifie ce formulaire -->
-                    <input type="hidden" name="form_type" value="projet">
-
-                    <!-- Champ : Nom / Entreprise -->
-                    <div class="groupe-champ <?= !empty($erreurs_projet['proj-nom']) ? 'champ-erreur' : '' ?>">
-                        <label for="proj-nom">
+                    <!-- Nom -->
+                    <div class="groupe-champ">
+                        <label for="demande-nom">
                             Votre nom / entreprise <span class="obligatoire">*</span>
                         </label>
                         <input type="text"
-                               id="proj-nom"
-                               name="proj-nom"
-                               placeholder="Nom ou entreprise"
-                               value="<?= nettoyer($proj_nom) ?>"
-                               required>
-                        <?php afficher_erreur($erreurs_projet, 'proj-nom'); ?>
+                               id="demande-nom"
+                               name="nom"
+                               value="<?= $valeurs_demande['nom'] ?>"
+                               placeholder=" Nom ou entreprise"
+                               autocomplete="name">
+                        <?php afficher_erreur($erreurs_demande, 'nom'); ?>
                     </div>
 
-                    <!-- Champ : Email de contact -->
-                    <div class="groupe-champ <?= !empty($erreurs_projet['proj-email']) ? 'champ-erreur' : '' ?>">
-                        <label for="proj-email">
+                    <!-- Email -->
+                    <div class="groupe-champ">
+                        <label for="demande-email">
                             Email de contact <span class="obligatoire">*</span>
                         </label>
                         <input type="email"
-                               id="proj-email"
-                               name="proj-email"
+                               id="demande-email"
+                               name="email"
+                               value="<?= $valeurs_demande['email'] ?>"
                                placeholder="contact@entreprise.com"
-                               value="<?= nettoyer($proj_email) ?>"
-                               required>
-                        <?php afficher_erreur($erreurs_projet, 'proj-email'); ?>
+                               autocomplete="email">
+                        <?php afficher_erreur($erreurs_demande, 'email'); ?>
                     </div>
 
-                    <!-- Champ : Type de projet (liste déroulante) -->
-                    <div class="groupe-champ <?= !empty($erreurs_projet['proj-type']) ? 'champ-erreur' : '' ?>">
-                        <label for="proj-type">
+                    <!-- Type de projet -->
+                    <div class="groupe-champ">
+                        <label for="demande-type">
                             Type de projet <span class="obligatoire">*</span>
                         </label>
-                        <select id="proj-type" name="proj-type" required>
-                            <option value="" disabled
-                                <?= $proj_type === '' ? 'selected' : '' ?>>
-                                -- Choisir un type --
-                            </option>
+                        <select id="demande-type" name="type_projet">
+                            <option value="">-- Choisissez un type --</option>
                             <?php
-                            /* Générer les options dynamiquement depuis $types_lisibles.
-                               L'option précédemment choisie est marquée 'selected'
-                               pour pré-remplir le formulaire en cas d'erreur. */
-                            foreach ($types_lisibles as $valeur => $libelle) :
+                            $types = ['Site vitrine', 'Site e-commerce', 'Application web', 'Site WordPress', 'Portfolio', 'Autre'];
+                            foreach ($types as $type) :
+                                $sel = ($valeurs_demande['type_projet'] === $type) ? 'selected' : '';
                             ?>
-                            <option value="<?= nettoyer($valeur) ?>"
-                                    <?= $proj_type === $valeur ? 'selected' : '' ?>>
-                                <?= nettoyer($libelle) ?>
-                            </option>
+                                <option value="<?= nettoyer($type) ?>" <?= $sel ?>>
+                                    <?= nettoyer($type) ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
-                        <?php afficher_erreur($erreurs_projet, 'proj-type'); ?>
+                        <?php afficher_erreur($erreurs_demande, 'type_projet'); ?>
                     </div>
 
-                    <!-- Champ : Budget estimé (optionnel) -->
+                    <!-- Description -->
                     <div class="groupe-champ">
-                        <label for="proj-budget">Budget estimé</label>
-                        <select id="proj-budget" name="proj-budget">
-                            <option value=""
-                                <?= $proj_budget === '' ? 'selected' : '' ?>>
-                                -- Budget approximatif --
-                            </option>
-                            <?php
-                            /* Tableau des tranches de budget */
-                            $budgets = [
-                                'Moins de 100 000 FCFA',
-                                '100 000 – 300 000 FCFA',
-                                'Plus de 300 000 FCFA',
-                            ];
-                            foreach ($budgets as $b) :
-                            ?>
-                            <option value="<?= nettoyer($b) ?>"
-                                    <?= $proj_budget === $b ? 'selected' : '' ?>>
-                                <?= nettoyer($b) ?>
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <!-- Champ : Description du projet -->
-                    <div class="groupe-champ <?= !empty($erreurs_projet['proj-desc']) ? 'champ-erreur' : '' ?>">
-                        <label for="proj-desc">
+                        <label for="demande-description">
                             Description du projet <span class="obligatoire">*</span>
                         </label>
-                        <textarea id="proj-desc"
-                                  name="proj-desc"
+                        <textarea id="demande-description"
+                                  name="description"
                                   rows="5"
-                                  placeholder="Décrivez votre projet, vos besoins et vos délais..."
-                                  required><?= nettoyer($proj_desc) ?></textarea>
-                        <?php afficher_erreur($erreurs_projet, 'proj-desc'); ?>
+                                  placeholder="Décrivez votre projet, vos besoins et vos délais..."><?= $valeurs_demande['description'] ?></textarea>
+                        <?php afficher_erreur($erreurs_demande, 'description'); ?>
                     </div>
 
-                    <button type="submit" class="btn-principal btn-plein">
-                        <i class="fas fa-paper-plane"></i> Envoyer la demande
+                    <!-- Budget (optionnel) -->
+                    <div class="groupe-champ">
+                        <label for="demande-budget">
+                            Budget estimé
+                            <span style="font-size:0.8em;font-weight:400;color:var(--couleur-texte-doux);">(optionnel)</span>
+                        </label>
+                        <select id="demande-budget" name="budget">
+                            <option value="">-- Budget approximatif --</option>
+                            <?php
+                            $budgets = ['Moins de 100 000 FCFA', '100 000 – 300 000 FCFA', '300 000 – 500 000 FCFA', 'Plus de 500 000 FCFA'];
+                            foreach ($budgets as $budget) :
+                                $sel = ($valeurs_demande['budget'] === $budget) ? 'selected' : '';
+                            ?>
+                                <option value="<?= nettoyer($budget) ?>" <?= $sel ?>>
+                                    <?= nettoyer($budget) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-principal" style="width:100%;justify-content:center;display:flex;gap:.5rem;align-items:center;">
+                        <i class="fas fa-rocket"></i> Envoyer la demande
                     </button>
 
+                    <p class="note-form">* Champs obligatoires</p>
                 </form>
 
             <?php endif; ?>
-
         </div>
 
-    </section>
+    </div>
 
     <?php require 'composants/pied-de-page.php'; ?>
-
     <script src="js/script.js"></script>
-
 </body>
 </html>

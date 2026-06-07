@@ -6,7 +6,10 @@
    dynamique avec des boucles foreach.
    ============================================================ */
 
-require 'fonctions.php';
+session_start();
+require_once 'fonctions.php';
+require_once 'config/connexion.php';
+enregistrer_visite($pdo, 'competences.php');
 
 /* ============================================================
    DONNÉES DES LANGAGES DE PROGRAMMATION

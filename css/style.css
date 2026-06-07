@@ -1548,3 +1548,83 @@ img {
         display: flex;
     }
 }
+
+/* ============================================================
+   PARTIE 3 — Styles supplémentaires
+   Ajoutés à style.css pour compléter les pages Partie 3.
+   ============================================================ */
+
+/* ---- Formulaires publics (contact, demande) --------------- */
+.requis       { color: var(--accent, #a855f7); }
+.optionnel    { color: #888; font-size: 0.82em; font-weight: 400; }
+
+.champ-groupe select {
+    width            : 100%;
+    padding          : 0.7rem 1rem;
+    border-radius    : 10px;
+    border           : 1px solid rgba(255,255,255,0.12);
+    background       : rgba(255,255,255,0.05);
+    color            : inherit;
+    font-family      : inherit;
+    font-size        : 0.95rem;
+    cursor           : pointer;
+    outline          : none;
+    transition       : border-color 0.2s;
+    box-sizing       : border-box;
+}
+.champ-groupe select:focus { border-color: var(--accent, #a855f7); }
+.champ-groupe select option { background: #1a1a2e; color: #cdd6f4; }
+
+.btn-formulaire {
+    display          : inline-flex;
+    align-items      : center;
+    gap              : 0.5rem;
+    width            : 100%;
+    justify-content  : center;
+    margin-top       : 0.5rem;
+}
+
+/* Messages de succès / erreur dans les formulaires */
+.message-succes,
+.message-erreur {
+    display          : flex;
+    align-items      : center;
+    gap              : 0.6rem;
+    padding          : 0.9rem 1.1rem;
+    border-radius    : 10px;
+    font-weight      : 600;
+    font-size        : 0.93rem;
+    margin-bottom    : 1.2rem;
+}
+.message-succes {
+    background       : rgba(166, 227, 161, 0.12);
+    color            : #a6e3a1;
+    border           : 1px solid rgba(166, 227, 161, 0.3);
+}
+.message-erreur {
+    background       : rgba(243, 139, 168, 0.12);
+    color            : #f38ba8;
+    border           : 1px solid rgba(243, 139, 168, 0.3);
+}
+
+/* Erreurs de champ inline */
+.erreur-champ {
+    display          : flex;
+    align-items      : center;
+    gap              : 0.35rem;
+    color            : #f38ba8;
+    font-size        : 0.83rem;
+    margin-top       : 0.3rem;
+}
+
+/* ---- Projets : image placeholder si pas d'image ----------- */
+.image-placeholder {
+    width            : 100%;
+    height           : 100%;
+    display          : flex;
+    align-items      : center;
+    justify-content  : center;
+    background       : rgba(255,255,255,0.05);
+    color            : rgba(255,255,255,0.2);
+    font-size        : 2.5rem;
+}

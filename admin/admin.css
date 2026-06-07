@@ -1,0 +1,589 @@
+/* ============================================================
+   ESPACE ADMIN — admin/admin.css
+   Styles spécifiques à l'interface d'administration.
+   Complète style.css sans le modifier.
+   ============================================================ */
+
+/* ============================================================
+   1. VARIABLES ET RESET ADMIN
+   ============================================================ */
+:root {
+    --admin-bg        : #0f0f1a;       /* Fond général de l'admin */
+    --admin-sidebar   : #13131f;       /* Fond de la barre de navigation */
+    --admin-card      : #1a1a2e;       /* Fond des cartes/sections */
+    --admin-border    : #2a2a45;       /* Couleur des bordures */
+    --admin-text      : #cdd6f4;       /* Texte principal */
+    --admin-text-muted: #7c7fa8;       /* Texte secondaire */
+    --admin-accent    : #cba6f7;       /* Couleur accent (violet) */
+    --admin-success   : #a6e3a1;       /* Vert succès */
+    --admin-danger    : #f38ba8;       /* Rouge erreur/danger */
+    --admin-warning   : #fab387;       /* Orange avertissement */
+    --admin-info      : #89dceb;       /* Bleu information */
+    --admin-header-h  : 64px;          /* Hauteur du header fixe */
+}
+
+/* Application du fond admin sur le body */
+.admin-body {
+    background-color : var(--admin-bg);
+    color            : var(--admin-text);
+    min-height       : 100vh;
+    font-family      : 'Nunito', sans-serif;
+}
+
+/* ============================================================
+   2. HEADER / NAVIGATION ADMIN (barre horizontale en haut)
+   ============================================================ */
+.admin-header {
+    position         : fixed;
+    top              : 0;
+    left             : 0;
+    right            : 0;
+    height           : var(--admin-header-h);
+    background       : var(--admin-sidebar);
+    border-bottom    : 1px solid var(--admin-border);
+    display          : flex;
+    align-items      : center;
+    gap              : 0;
+    z-index          : 1000;
+    padding          : 0 1.5rem;
+}
+
+/* Logo admin */
+.admin-logo a {
+    font-family      : 'Playfair Display', serif;
+    font-size        : 1.4rem;
+    font-weight      : 700;
+    color            : var(--admin-text);
+    text-decoration  : none;
+    white-space      : nowrap;
+    margin-right     : 2rem;
+}
+.admin-logo a span { color: var(--admin-accent); }
+.admin-logo a small {
+    font-size        : 0.75rem;
+    font-family      : 'Nunito', sans-serif;
+    color            : var(--admin-text-muted);
+    margin-left      : 4px;
+}
+
+/* Navigation links */
+.admin-nav {
+    display          : flex;
+    align-items      : center;
+    gap              : 0.25rem;
+    flex             : 1;
+    overflow-x       : auto;
+}
+
+.admin-lien {
+    display          : flex;
+    align-items      : center;
+    gap              : 0.45rem;
+    padding          : 0.5rem 0.85rem;
+    border-radius    : 8px;
+    color            : var(--admin-text-muted);
+    text-decoration  : none;
+    font-size        : 0.88rem;
+    font-weight      : 600;
+    white-space      : nowrap;
+    transition       : background 0.2s, color 0.2s;
+}
+.admin-lien:hover,
+.admin-lien.actif {
+    background       : rgba(203, 166, 247, 0.12);
+    color            : var(--admin-accent);
+}
+
+/* Lien déconnexion — rouge */
+.admin-deconnexion {
+    margin-left      : auto;
+    color            : var(--admin-danger);
+}
+.admin-deconnexion:hover {
+    background       : rgba(243, 139, 168, 0.12);
+    color            : var(--admin-danger);
+}
+
+/* Affichage du nom de l'utilisateur connecté */
+.admin-user {
+    display          : flex;
+    align-items      : center;
+    gap              : 0.5rem;
+    color            : var(--admin-text-muted);
+    font-size        : 0.85rem;
+    padding-left     : 1rem;
+    border-left      : 1px solid var(--admin-border);
+    white-space      : nowrap;
+}
+
+/* ============================================================
+   3. MAIN CONTENT — décalé sous le header fixe
+   ============================================================ */
+.admin-main {
+    padding-top      : calc(var(--admin-header-h) + 2rem);
+    padding-bottom   : 3rem;
+    min-height       : 100vh;
+}
+
+.admin-conteneur {
+    max-width        : 1200px;
+    margin           : 0 auto;
+    padding          : 0 1.5rem;
+}
+
+/* ============================================================
+   4. EN-TÊTE DE PAGE ADMIN
+   ============================================================ */
+.admin-entete {
+    display          : flex;
+    align-items      : center;
+    justify-content  : space-between;
+    flex-wrap        : wrap;
+    gap              : 1rem;
+    margin-bottom    : 2rem;
+}
+.admin-entete h1 {
+    font-size        : 1.6rem;
+    color            : var(--admin-text);
+    display          : flex;
+    align-items      : center;
+    gap              : 0.6rem;
+}
+.admin-entete h1 i { color: var(--admin-accent); }
+
+/* ============================================================
+   5. CARTES DE STATISTIQUES (dashboard)
+   ============================================================ */
+.stats-grille {
+    display          : grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap              : 1.25rem;
+    margin-bottom    : 2.5rem;
+}
+
+.stat-carte {
+    background       : var(--admin-card);
+    border           : 1px solid var(--admin-border);
+    border-radius    : 14px;
+    padding          : 1.5rem;
+    display          : flex;
+    align-items      : center;
+    gap              : 1.2rem;
+    transition       : transform 0.2s;
+}
+.stat-carte:hover { transform: translateY(-3px); }
+
+.stat-carte > i {
+    font-size        : 2rem;
+    width            : 50px;
+    height           : 50px;
+    border-radius    : 12px;
+    display          : flex;
+    align-items      : center;
+    justify-content  : center;
+    flex-shrink      : 0;
+}
+
+.stat-carte > div { display: flex; flex-direction: column; }
+
+.stat-carte .stat-nombre {
+    font-size        : 2rem;
+    font-weight      : 700;
+    line-height      : 1;
+    color            : var(--admin-text);
+}
+.stat-carte .stat-label {
+    font-size        : 0.82rem;
+    color            : var(--admin-text-muted);
+    margin-top       : 0.3rem;
+}
+
+/* Couleurs des cartes de stats */
+.stat-bleu  > i { background: rgba(137, 220, 235, 0.15); color: var(--admin-info); }
+.stat-orange > i { background: rgba(250, 179, 135, 0.15); color: var(--admin-warning); }
+.stat-violet > i { background: rgba(203, 166, 247, 0.15); color: var(--admin-accent); }
+
+/* ============================================================
+   6. SECTIONS ADMIN (blocs de contenu)
+   ============================================================ */
+.admin-section {
+    background       : var(--admin-card);
+    border           : 1px solid var(--admin-border);
+    border-radius    : 14px;
+    padding          : 1.75rem;
+    margin-bottom    : 2rem;
+}
+.admin-section h2 {
+    font-size        : 1.15rem;
+    color            : var(--admin-text);
+    margin-bottom    : 1.25rem;
+    display          : flex;
+    align-items      : center;
+    gap              : 0.5rem;
+}
+.admin-section h2 i { color: var(--admin-accent); }
+
+/* ============================================================
+   7. TABLEAUX ADMIN
+   ============================================================ */
+.tableau-wrapper {
+    overflow-x       : auto; /* Scroll horizontal sur mobile */
+    border-radius    : 10px;
+    border           : 1px solid var(--admin-border);
+}
+
+.admin-tableau {
+    width            : 100%;
+    border-collapse  : collapse;
+    font-size        : 0.9rem;
+}
+
+.admin-tableau thead {
+    background       : rgba(203, 166, 247, 0.08);
+}
+.admin-tableau th {
+    padding          : 0.85rem 1rem;
+    text-align       : left;
+    color            : var(--admin-accent);
+    font-weight      : 600;
+    font-size        : 0.82rem;
+    text-transform   : uppercase;
+    letter-spacing   : 0.05em;
+    white-space      : nowrap;
+}
+.admin-tableau td {
+    padding          : 0.8rem 1rem;
+    color            : var(--admin-text);
+    border-top       : 1px solid var(--admin-border);
+    vertical-align   : middle;
+}
+
+/* Ligne non lue : fond légèrement différent + indicateur */
+.ligne-non-lue td {
+    background       : rgba(250, 179, 135, 0.05);
+}
+.ligne-non-lue td:first-child {
+    border-left      : 3px solid var(--admin-warning);
+}
+
+/* ============================================================
+   8. BADGES DE STATUT
+   ============================================================ */
+.badge-lu,
+.badge-non-lu,
+.badge-vous,
+.badge-compteur {
+    display          : inline-flex;
+    align-items      : center;
+    padding          : 0.2rem 0.65rem;
+    border-radius    : 20px;
+    font-size        : 0.78rem;
+    font-weight      : 600;
+}
+.badge-lu       { background: rgba(166, 227, 161, 0.15); color: var(--admin-success); }
+.badge-non-lu   { background: rgba(250, 179, 135, 0.15); color: var(--admin-warning); }
+.badge-vous     { background: rgba(203, 166, 247, 0.15); color: var(--admin-accent); }
+.badge-compteur {
+    background      : rgba(250, 179, 135, 0.15);
+    color           : var(--admin-warning);
+    font-size       : 0.9rem;
+    padding         : 0.3rem 0.8rem;
+}
+
+/* ============================================================
+   9. BOUTONS D'ACTION (tableau)
+   ============================================================ */
+.actions-cellule {
+    display          : flex;
+    align-items      : center;
+    gap              : 0.5rem;
+    flex-wrap        : wrap;
+}
+
+.btn-action {
+    display          : inline-flex;
+    align-items      : center;
+    justify-content  : center;
+    width            : 34px;
+    height           : 34px;
+    border-radius    : 8px;
+    border           : none;
+    cursor           : pointer;
+    font-size        : 0.88rem;
+    text-decoration  : none;
+    transition       : background 0.2s, transform 0.15s;
+}
+.btn-action:hover { transform: scale(1.1); }
+
+.btn-modifier { background: rgba(137, 220, 235, 0.15); color: var(--admin-info); }
+.btn-modifier:hover { background: rgba(137, 220, 235, 0.3); }
+
+.btn-supprimer { background: rgba(243, 139, 168, 0.15); color: var(--admin-danger); }
+.btn-supprimer:hover { background: rgba(243, 139, 168, 0.3); }
+
+.btn-voir { background: rgba(203, 166, 247, 0.15); color: var(--admin-accent); }
+.btn-voir:hover { background: rgba(203, 166, 247, 0.3); }
+
+/* Formulaire de suppression en ligne dans le tableau */
+.form-suppr {
+    display          : inline-flex;
+    margin           : 0;
+    padding          : 0;
+}
+
+/* ============================================================
+   10. FORMULAIRES ADMIN
+   ============================================================ */
+.champ-groupe {
+    margin-bottom    : 1.25rem;
+}
+.champ-groupe label {
+    display          : block;
+    font-size        : 0.88rem;
+    font-weight      : 600;
+    color            : var(--admin-text-muted);
+    margin-bottom    : 0.45rem;
+}
+.champ-groupe input[type="text"],
+.champ-groupe input[type="email"],
+.champ-groupe input[type="password"],
+.champ-groupe input[type="url"],
+.champ-groupe textarea,
+.champ-groupe select {
+    width            : 100%;
+    background       : var(--admin-bg);
+    border           : 1px solid var(--admin-border);
+    border-radius    : 10px;
+    padding          : 0.7rem 1rem;
+    color            : var(--admin-text);
+    font-family      : 'Nunito', sans-serif;
+    font-size        : 0.95rem;
+    outline          : none;
+    transition       : border-color 0.2s;
+    box-sizing       : border-box;
+}
+.champ-groupe input[type="file"] {
+    width            : 100%;
+    color            : var(--admin-text-muted);
+    font-size        : 0.9rem;
+    cursor           : pointer;
+}
+.champ-groupe input:focus,
+.champ-groupe textarea:focus,
+.champ-groupe select:focus {
+    border-color     : var(--admin-accent);
+}
+.champ-groupe select option { background: var(--admin-card); }
+
+/* Grille à 2 colonnes pour certains formulaires */
+.form-grille-2 {
+    display          : grid;
+    grid-template-columns: 1fr 1fr;
+    gap              : 1rem;
+}
+@media (max-width: 640px) { .form-grille-2 { grid-template-columns: 1fr; } }
+
+/* Aperçu de l'image dans le formulaire de modification */
+.apercu-image {
+    max-width        : 220px;
+    max-height       : 140px;
+    border-radius    : 10px;
+    border           : 1px solid var(--admin-border);
+    margin-top       : 0.5rem;
+    object-fit       : cover;
+}
+
+/* Boutons d'action de formulaire */
+.form-actions {
+    display          : flex;
+    gap              : 1rem;
+    flex-wrap        : wrap;
+    margin-top       : 1.5rem;
+    align-items      : center;
+}
+
+/* Texte d'info sous un champ */
+.info-champ {
+    font-size        : 0.82rem;
+    color            : var(--admin-text-muted);
+    margin-bottom    : 0.75rem;
+}
+.info-champ i { color: var(--admin-info); }
+
+/* ============================================================
+   11. ALERTES / MESSAGES DE RETOUR
+   ============================================================ */
+.alerte {
+    display          : flex;
+    align-items      : center;
+    gap              : 0.75rem;
+    padding          : 0.9rem 1.2rem;
+    border-radius    : 10px;
+    font-size        : 0.93rem;
+    font-weight      : 600;
+    margin-bottom    : 1.5rem;
+}
+.alerte-succes {
+    background       : rgba(166, 227, 161, 0.12);
+    color            : var(--admin-success);
+    border           : 1px solid rgba(166, 227, 161, 0.3);
+}
+.alerte-erreur {
+    background       : rgba(243, 139, 168, 0.12);
+    color            : var(--admin-danger);
+    border           : 1px solid rgba(243, 139, 168, 0.3);
+}
+
+/* ============================================================
+   12. CARTE DE MESSAGE (détail message / demande)
+   ============================================================ */
+.carte-message {
+    max-width        : 800px;
+}
+.message-meta {
+    display          : flex;
+    flex-direction   : column;
+    gap              : 0.6rem;
+}
+.message-meta p {
+    font-size        : 0.95rem;
+    color            : var(--admin-text);
+}
+.message-meta a {
+    color            : var(--admin-accent);
+    text-decoration  : none;
+}
+.message-meta a:hover { text-decoration: underline; }
+
+.separateur {
+    border           : none;
+    border-top       : 1px solid var(--admin-border);
+    margin           : 1.5rem 0;
+}
+.message-corps h3 {
+    font-size        : 1rem;
+    color            : var(--admin-text-muted);
+    margin-bottom    : 0.75rem;
+}
+.message-corps p {
+    color            : var(--admin-text);
+    line-height      : 1.75;
+    font-size        : 0.95rem;
+    white-space      : pre-wrap; /* Préserve les retours à la ligne */
+}
+
+/* ============================================================
+   13. PAGE DE CONNEXION (layout centré)
+   ============================================================ */
+.page-connexion {
+    display          : flex;
+    align-items      : center;
+    justify-content  : center;
+    min-height       : 100vh;
+    background       : var(--admin-bg);
+    padding          : 1.5rem;
+}
+
+.connexion-conteneur {
+    width            : 100%;
+    max-width        : 460px;
+}
+
+.connexion-carte {
+    background       : var(--admin-card);
+    border           : 1px solid var(--admin-border);
+    border-radius    : 18px;
+    padding          : 2.5rem 2rem;
+    text-align       : center;
+}
+
+.connexion-logo {
+    margin-bottom    : 1.5rem;
+}
+.connexion-logo a {
+    font-family      : 'Playfair Display', serif;
+    font-size        : 2rem;
+    font-weight      : 700;
+    color            : var(--admin-text);
+    text-decoration  : none;
+}
+.connexion-logo a span { color: var(--admin-accent); }
+
+.connexion-carte h1 {
+    font-size        : 1.5rem;
+    margin-bottom    : 0.5rem;
+    color            : var(--admin-text);
+}
+
+.connexion-sous-titre {
+    color            : var(--admin-text-muted);
+    font-size        : 0.9rem;
+    margin-bottom    : 1.75rem;
+}
+
+.connexion-carte .champ-groupe {
+    text-align       : left;
+}
+
+.connexion-carte .btn-principal {
+    width            : 100%;
+    justify-content  : center;
+    margin-top       : 0.5rem;
+}
+
+.retour-site {
+    margin-top       : 1.5rem;
+    font-size        : 0.88rem;
+}
+.retour-site a {
+    color            : var(--admin-text-muted);
+    text-decoration  : none;
+    display          : inline-flex;
+    align-items      : center;
+    gap              : 0.4rem;
+}
+.retour-site a:hover { color: var(--admin-accent); }
+
+/* ============================================================
+   14. DIVERS
+   ============================================================ */
+.aucun-resultat {
+    color            : var(--admin-text-muted);
+    text-align       : center;
+    padding          : 2rem;
+    font-style       : italic;
+}
+.aucun-resultat a { color: var(--admin-accent); }
+
+.texte-gris {
+    color            : var(--admin-text-muted);
+    font-style       : italic;
+    font-size        : 0.9rem;
+}
+
+code {
+    background       : rgba(203, 166, 247, 0.1);
+    color            : var(--admin-accent);
+    padding          : 0.15rem 0.45rem;
+    border-radius    : 5px;
+    font-size        : 0.88em;
+}
+
+/* ============================================================
+   15. RESPONSIVE MOBILE
+   ============================================================ */
+@media (max-width: 768px) {
+    .admin-header {
+        flex-wrap    : wrap;
+        height       : auto;
+        padding      : 0.75rem 1rem;
+        gap          : 0.5rem;
+    }
+    .admin-main { padding-top: 6rem; }
+    .admin-nav  { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .admin-user { display: none; } /* Masqué sur mobile par manque de place */
+    .stats-grille { grid-template-columns: 1fr; }
+    .admin-entete { flex-direction: column; align-items: flex-start; }
+    .form-actions { flex-direction: column; }
+    .form-actions a, .form-actions button { width: 100%; justify-content: center; }
+}
