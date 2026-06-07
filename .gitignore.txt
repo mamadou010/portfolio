@@ -1,0 +1,9 @@
+# Fichier .gitignore — Portfolio Mamadou Ndiaye
+
+# CRITIQUE : identifiants base de données
+config/connexion.php
+
+# Fichiers système (bonne pratique)
+Thumbs.db
+desktop.ini
+.DS_Store

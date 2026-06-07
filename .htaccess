@@ -1,0 +1,12 @@
+# ============================================================
+# .htaccess — Protection du dossier config/
+# ============================================================
+
+# Bloquer l'accès direct au dossier config/ depuis le navigateur
+# (connexion.php contient les identifiants de base de données)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Bloquer tout accès direct à config/
+    RewriteRule ^config/ - [F,L]
+</IfModule>
